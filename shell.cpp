@@ -1,6 +1,4 @@
 // understand the getCurrentDirectory() how is it working
-// if i am doing tab and then pressing ctrl+d then it is leading to segmentation fault
-// when i am entering without giving any input then also it is leading to segmentation fault
 #include<iostream>
 #include<unistd.h>
 #include<sys/types.h>
@@ -60,6 +58,12 @@ int main() {
         // read the user given cmd from the shell
         std::string userCommand;
         std::getline(std::cin,userCommand);
+
+        if (std::cin.eof()) {  
+            std::cout << std::endl;  
+            running = false;  
+            break;  
+        }
 
         if (userCommand.empty()) {continue;}
 
