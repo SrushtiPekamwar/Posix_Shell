@@ -1,12 +1,12 @@
 // understand the getCurrentDirectory() how is it working
 // if i am doing tab and then pressing ctrl+d then it is leading to segmentation fault
 // when i am entering without giving any input then also it is leading to segmentation fault
-
 #include<iostream>
 #include<unistd.h>
 #include<sys/types.h>
 #include<pwd.h>
 #include<string>
+#include"commands_folder/commands.h"
 
 std::string getUsername() {
     // get the user id and then find its username
@@ -61,10 +61,7 @@ int main() {
         std::string userCommand;
         std::getline(std::cin,userCommand);
 
-        if (std::cin.eof()) {
-            running = false;
-            continue;
-        }
+        if (userCommand.empty()) {continue;}
 
         char* userCommandCopy = new char[userCommand.length()+1];
         strcpy(userCommandCopy,userCommand.c_str());
@@ -101,6 +98,11 @@ int main() {
                 else if(strcmp(command,"clear")==0) {
                     std::cout << "\033[2J\033[3J\033[H" << std::flush;
                 }
+
+                else if(strncmp(command,"echo",4)==0) {
+                    echoCommand(command);
+                }
+
 
                 else {
                     // For now, handle other commands as not found

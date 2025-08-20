@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -g -Wall -std=c++11
 TARGET = shell
-SRCS = shell.cpp
+SRCS = shell.cpp commands_folder/echo.cpp
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
 all: $(TARGET)
 
