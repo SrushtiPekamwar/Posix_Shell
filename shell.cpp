@@ -1,4 +1,6 @@
 // understand the getCurrentDirectory() how is it working
+// in the search no need to consider the hidden files 
+// in cd ~ and ls ~ it should fallback to the actual home directory
 #include<iostream>
 #include<unistd.h>
 #include<sys/types.h>
@@ -118,7 +120,7 @@ int main() {
 
                 else if (strncmp(command, "ls", 2) == 0 &&
                         (command[2] == '\0' || command[2] == ' ' || command[2] == '\t')) {
-                    lsCommand(command, homeDirectory);
+                    lsCommand(command);
                 }
 
 

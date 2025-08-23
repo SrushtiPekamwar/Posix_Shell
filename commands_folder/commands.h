@@ -7,7 +7,8 @@ using namespace std;
 
 void echoCommand(const char* command);
 void cdCommand(const char* command, string &homeDirectory, string &prevDirectory);
-void lsCommand(const char* command, string &homeDirectory);
+void lsCommand(const char* command);
+string systemHomePath();
 const char* skipSpacesAndTabs(const char* ptr);
 
 #endif

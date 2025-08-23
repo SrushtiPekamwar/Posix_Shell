@@ -1,43 +1,21 @@
 /*
-ls .
-ls ..
-ls ~
-ls <Directory/Filename>
-ls -<flags> <Directory/Filename> 
 Example: <Name@UBUNTU:~> ls -al test_dir
 There can be multiple directory names and multiple flags and multiple directories separately
 combinations of all the flags should also work like a . .. ~
+when we do ls ~ then it should fallback to the actual home directory of the system
 */
 
 // doubts of ls
 // here also check if we do ls ~ then should we have to print from the root directory or the root directory of the shell
+// on macos there are different things like while parsing and all so it should be according to my shell 
+// ls . -a -----> -a is treated as a filename → "No such file or directory"
+// ls . -a -----> -a is still treated as an option → shows hidden files in "."
 
-// for ls -l directory1 -a directory 2 
-/*
-srushtipekamwar@Srushtis-MacBook-Air ~ % ls -l Desktop -a Downloads
-ls: -a: No such file or directory
-Desktop:
-total 40784
-drwxr-xr-x@  8 srushtipekamwar  staff       256 16 Aug 14:48 2025201066_lab2
--rwxr-xr-x@  1 srushtipekamwar  staff  20382720 17 Jul 22:29 antivirus
-drwxr-xr-x  10 srushtipekamwar  staff       320 20 Aug 23:33 AOS
-drwxr-xr-x@ 16 srushtipekamwar  staff       512 17 Aug 18:31 CPP
-drwxr-xr-x@ 15 srushtipekamwar  staff       480 19 Aug 20:47 DSAPS
-drwxr-xr-x   4 srushtipekamwar  staff       128 21 Aug 13:52 PNS
--rw-r--r--@  1 srushtipekamwar  staff    495070 21 Jul 21:27 Screenshot 2025-07-21 at 9.27.24 PM.png
-drwxr-xr-x  16 srushtipekamwar  staff       512 21 Aug 21:50 SSD
-
-Downloads:
-total 51224
--rw-r--r--@ 1 srushtipekamwar  staff      6064 23 Aug 10:38 generic.ovpn
--rw-r--r--@ 1 srushtipekamwar  staff    999319  4 Aug 23:13 golkonda.jpeg
--rw-r--r--@ 1 srushtipekamwar  staff   1044528 22 Aug 09:37 HTML.pdf
--rw-r--r--@ 1 srushtipekamwar  staff     30402  9 Jul 12:52 tuf_logo.png
--rw-r--r--@ 1 srushtipekamwar  staff      5691  7 Jul 18:06 tuf.png
--rw-r--r--@ 1 srushtipekamwar  staff      3546  7 Jul 18:09 tuf2.png
--rw-r--r--@ 1 srushtipekamwar  staff  20985452 23 Aug 10:37 Tunnelblick_8.0_build_6300.dmg
--rw-r--r--@ 1 srushtipekamwar  staff   2134661 22 Aug 08:42 Web.pdf
-*/
+// this is specific to mac os
+#if defined(__APPLE__)
+    #include <sys/xattr.h>
+    #include <sys/acl.h>
+#endif
 
 #include "commands.h"
 #include <iostream>
@@ -53,12 +31,6 @@ total 51224
 #include <iomanip>
 #include <ctime>
 #include <cmath>
-
-// this is specific to mac os
-#if defined(__APPLE__)
-#include <sys/xattr.h>
-#include <sys/acl.h>
-#endif
 
 #define DEFAULT_COLOUR "\033[0m"
 #define YELLOW_DIRECTORY  "\033[33m"
@@ -82,6 +54,7 @@ static bool comp(const fileDetails &a, const fileDetails &b) {
     return a.name < b.name;
 }
 
+// this is very specific with the mac
 static char markerOfPermissionString(string &path) {
     #if defined(__APPLE__)
         ssize_t extraAttribute = listxattr(path.c_str(),nullptr,0,XATTR_NOFOLLOW);
@@ -122,8 +95,8 @@ static string filePermission(mode_t mode, string &path) {
 
     // the last character is the special bit 
     if(mode & S_ISUID) str[3] = (str[3]=='x')? 's':'S';
-    if(mode & S_ISUID) str[6] = (str[6]=='x')? 's':'S';
-    if(mode & S_ISUID) str[9] = (str[9]=='x')? 't':'T';
+    if(mode & S_ISGID) str[6] = (str[6]=='x')? 's':'S';
+    if(mode & S_ISVTX) str[9] = (str[9]=='x')? 't':'T';
 
     string finalStr = str;
     finalStr.push_back(markerOfPermissionString(path));
@@ -185,7 +158,7 @@ static void printFiles(vector<fileDetails> &filesArray, bool _l) {
                 << nlink << '\t'
                 << ownerName(file.st.st_uid) << '\t' << '\t'
                 << groupName(file.st.st_gid) << '\t'
-                << fileSize << '\t'
+                << fileSize << '\t' << '\t' << '\t'
                 << time << '\t'
                 << file.name 
                 << DEFAULT_COLOUR
@@ -203,7 +176,6 @@ static void printFiles(vector<fileDetails> &filesArray, bool _l) {
     }
 }
 
-// change the tempSt
 static void populateFilesArray(vector<fileDetails> &filesArray, DIR* currDirectory, string &basePath, bool _a) {
     // readdir reads entry from the open directory stream
     for(dirent* files;(files=readdir(currDirectory));) {
@@ -226,53 +198,96 @@ static void populateFilesArray(vector<fileDetails> &filesArray, DIR* currDirecto
     closedir(currDirectory);
 }
 
+static string interpretingTokens(string& token) {
+    string shellHomePath = systemHomePath();
+    // when only ~ is present 
+    if(token=="~") {
+        return shellHomePath;
+    }
+    // when ~ and / are present 
+    else if (token.size() > 1 && token[0] == '~' && token[1] == '/') {
+        return string(shellHomePath) + token.substr(1);
+    }
+    // when tokens like . .. are present 
+    return token;
+}
+
 // -a means show list of all the files including the hidden files
 // -l means show the list of all the files in detail
 
-// we will use this for -a and -l and any combination of al
-static bool parseOnlyAFlags(const char* p, Flags &flags) {
-    p = skipSpacesAndTabs(p);
-    while (*p) {
-        if (*p!='-') {
-            return false;
-        }
-        p++; // - has been found and now we will move to the next
-        if (!*p || *p == ' ' || *p == '\t') {
-            cerr << "ls: invalid option '-'\n";
-            return false;
-        }
-        while (*p && *p != ' ' && *p != '\t') {
-            if (*p == 'a') {
-                flags._a = true;
-            } else if (*p == 'l') {
-                flags._l = true;
-            } else {
-                cerr << "ls: invalid option -- '" << *p << "'\n";
+// we will use this for -a and -l and any combination of al and also to parse flags like . .. ~
+static bool parseOnlyFlagsAndPaths(const char* ptr, Flags &flags, vector<string> &filePaths) {
+    ptr = skipSpacesAndTabs(ptr);
+    bool seenTheOperand = false;
+    while (*ptr) {
+        // handling args like -a -l
+        if(seenTheOperand==false && *ptr=='-') {
+            ptr++; // - has been found and now we will move to the next
+            if (!*ptr || *ptr==' ' || *ptr=='\t') {
+                cerr << "ls: invalid option '-'\n";
                 return false;
             }
-            p++;
+            while (*ptr && *ptr!=' ' && *ptr!='\t') {
+                if (*ptr=='a') {flags._a = true;}
+                else if (*ptr=='l') {flags._l = true;}
+                else {
+                    cerr << "ls: invalid option -- '" << *ptr << endl;
+                    return false;
+                }
+                ptr++;
+            }
         }
-        p = skipSpacesAndTabs(p);
+        // there must be flags like . .. ~
+        else {
+            string token;
+            while(*ptr && *ptr!=' ' && *ptr!='\t') token.push_back(*ptr++);
+            if(!token.empty()) {
+                filePaths.push_back(interpretingTokens(token));
+                seenTheOperand = true;
+            }
+        }
+        ptr = skipSpacesAndTabs(ptr);
     }
     return true;
 }
 
-void lsCommand(const char* command, string &homeDirectory) {
+void lsCommand(const char* command) {
     const char* ptr = skipSpacesAndTabs(command);
     if(strncmp(ptr,"ls",2)==0) ptr+=2;
     ptr = skipSpacesAndTabs(ptr);
 
-    DIR* currDirectory = opendir(".");
-    if(!currDirectory) {
-        cerr << "ls: cannot open current directory: " << strerror(errno) << "\n";
-        return;
+    Flags flags;
+    vector<string> filePaths;
+    if(parseOnlyFlagsAndPaths(ptr,flags,filePaths)==false) return;
+    if(filePaths.empty()) filePaths.push_back(".");
+    sort(filePaths.begin(),filePaths.end());
+
+    for(ssize_t i=0;i<filePaths.size();++i) {
+        string &currPath = filePaths[i];
+        struct stat st{};
+        if(lstat(currPath.c_str(),&st)!=0) {
+            perror(("ls: " + currPath).c_str());
+            continue;
+        }
+
+        if(S_ISDIR(st.st_mode)) {
+            DIR* currDirectory = opendir(filePaths[i].c_str());
+            if(!currDirectory) {
+                perror(("ls: " + filePaths[i]).c_str());
+                continue;
+            }
+
+            vector<fileDetails> filesArray;
+            string basePath = filePaths[i];
+            populateFilesArray(filesArray,currDirectory,basePath,flags._a);
+
+            if(filePaths.size()>1) cout << filePaths[i] << ":" << endl;
+            printFiles(filesArray,flags._l);
+            if((i+1)<filePaths.size()) cout << endl;
+        }
+        else {
+            cout << currPath << endl;
+        }
     }
 
-    Flags flags;
-    if (parseOnlyAFlags(ptr,flags)==false) return;
-
-    vector<fileDetails> filesArray;
-    string basePath = ".";
-    populateFilesArray(filesArray,currDirectory,basePath,flags._a);
-    printFiles(filesArray,flags._l);
 }

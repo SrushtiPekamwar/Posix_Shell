@@ -4,10 +4,13 @@
 // // on executing command "cd .." your shell should display the absolute path of the current directory from the root.
 // // cd - --> goes to the previous working directory and also prints the path
 // // cd --> Go to the home directory 
-// // cd ~ --> 
+// // cd ~ --> go to the actual home of the system
 // // cd → “go home, trust $HOME (or fallback)”
 // // cd ~ → “expand ~ explicitly to $HOME and then go there”
 // // handle invalid number of arguments
+
+
+// need to make multiple changes in the cd
 
 #include "commands.h"
 #include <iostream>
@@ -47,9 +50,9 @@ static void splitOneArg(const char* raw, std::vector<std::string>& argsOut) {
 
 // Expand ~ to the shell's launch directory
 static std::string expandTilde(const std::string& path, const std::string& shellHome) {
-    if (!path.empty() && path[0] == '~') {
-        if (path.size() == 1) return shellHome;
-        if (path[1] == '/')  return shellHome + path.substr(1);
+    if (!path.empty() && path[0]=='~') {
+        if (path.size()==1) return shellHome;
+        if (path[1]=='/')  return shellHome + path.substr(1);
     }
     return path;
 }
