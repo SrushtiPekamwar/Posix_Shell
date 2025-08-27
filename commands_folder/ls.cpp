@@ -1,12 +1,4 @@
-/*
-Example: <Name@UBUNTU:~> ls -al test_dir
-There can be multiple directory names and multiple flags and multiple directories separately
-combinations of all the flags should also work like a . .. ~
-when we do ls ~ then it should fallback to the actual home directory of the system
-*/
-
 // doubts of ls
-// here also check if we do ls ~ then should we have to print from the root directory or the root directory of the shell
 // on macos there are different things like while parsing and all so it should be according to my shell 
 // ls . -a -----> -a is treated as a filename → "No such file or directory"
 // ls . -a -----> -a is still treated as an option → shows hidden files in "."
@@ -81,17 +73,17 @@ static string filePermission(mode_t mode, string &path) {
     else str[0]='-';
 
     // now we will append the user, groups and the others permisssion
-    str[1]=(mode & S_IRUSR)? 'r':'-';
-    str[2]=(mode & S_IWUSR)? 'w':'-';
-    str[3]=(mode & S_IXUSR)? 'x':'-';
+    str[1]=(mode & 0400)? 'r':'-';
+    str[2]=(mode & 0200)? 'w':'-';
+    str[3]=(mode & 0100)? 'x':'-';
 
-    str[4]=(mode & S_IRGRP)? 'r':'-';
-    str[5]=(mode & S_IWGRP)? 'w':'-';
-    str[6]=(mode & S_IXGRP)? 'x':'-';
+    str[4]=(mode & 0040)? 'r':'-';
+    str[5]=(mode & 0020)? 'w':'-';
+    str[6]=(mode & 0010)? 'x':'-';
 
-    str[7]=(mode & S_IROTH)? 'r':'-';
-    str[8]=(mode & S_IWOTH)? 'w':'-';
-    str[9]=(mode & S_IXOTH)? 'x':'-';
+    str[7]=(mode & 0004)? 'r':'-';
+    str[8]=(mode & 0002)? 'w':'-';
+    str[9]=(mode & 0001)? 'x':'-';
 
     // the last character is the special bit 
     if(mode & S_ISUID) str[3] = (str[3]=='x')? 's':'S';
@@ -178,7 +170,7 @@ static void printFiles(vector<fileDetails> &filesArray, bool _l) {
 
 static void populateFilesArray(vector<fileDetails> &filesArray, DIR* currDirectory, string &basePath, bool _a) {
     // readdir reads entry from the open directory stream
-    for(dirent* files;(files=readdir(currDirectory));) {
+    for(dirent *files;(files=readdir(currDirectory));) {
         fileDetails fDetails;
         fDetails.name = files->d_name;
         fDetails.dtype = files->d_type; 
@@ -205,8 +197,8 @@ static string interpretingTokens(string& token) {
         return shellHomePath;
     }
     // when ~ and / are present 
-    else if (token.size() > 1 && token[0] == '~' && token[1] == '/') {
-        return string(shellHomePath) + token.substr(1);
+    else if(token.size()>1 && token[0] == '~' && token[1] == '/') {
+        return string(shellHomePath)+token.substr(1);
     }
     // when tokens like . .. are present 
     return token;
@@ -216,45 +208,44 @@ static string interpretingTokens(string& token) {
 // -l means show the list of all the files in detail
 
 // we will use this for -a and -l and any combination of al and also to parse flags like . .. ~
-static bool parseOnlyFlagsAndPaths(const char* ptr, Flags &flags, vector<string> &filePaths) {
+static bool parseOnlyFlagsAndPaths(const char *ptr, Flags &flags, vector<string> &filePaths) {
     ptr = skipSpacesAndTabs(ptr);
-    bool seenTheOperand = false;
     while (*ptr) {
-        // handling args like -a -l
-        if(seenTheOperand==false && *ptr=='-') {
-            ptr++; // - has been found and now we will move to the next
-            if (!*ptr || *ptr==' ' || *ptr=='\t') {
-                cerr << "ls: invalid option '-'\n";
-                return false;
-            }
-            while (*ptr && *ptr!=' ' && *ptr!='\t') {
-                if (*ptr=='a') {flags._a = true;}
-                else if (*ptr=='l') {flags._l = true;}
+        string token;
+        while (*ptr && *ptr!=' ' && *ptr!='\t') token.push_back(*ptr++);
+        if(token.empty()) {
+            ptr = skipSpacesAndTabs(ptr);
+            continue;
+        }
+
+        // If it starts with '-' and has more than one char, treat as flags
+        if(token[0]=='-' && token.size()>1) {
+            for(size_t j=1;j<token.size();++j) {
+                if(token[j]=='a') flags._a = true;
+                else if(token[j]=='l') flags._l = true;
                 else {
-                    cerr << "ls: invalid option -- '" << *ptr << endl;
+                    cerr << "ls: invalid option : '" << token[j] << "'\n";
                     return false;
                 }
-                ptr++;
             }
-        }
-        // there must be flags like . .. ~
-        else {
-            string token;
-            while(*ptr && *ptr!=' ' && *ptr!='\t') token.push_back(*ptr++);
-            if(!token.empty()) {
-                filePaths.push_back(interpretingTokens(token));
-                seenTheOperand = true;
-            }
+        } else {
+            filePaths.push_back(interpretingTokens(token));
         }
         ptr = skipSpacesAndTabs(ptr);
     }
     return true;
 }
 
-void lsCommand(const char* command) {
-    const char* ptr = skipSpacesAndTabs(command);
+void lsCommand(const char *command) {
+    const char *ptr = skipSpacesAndTabs(command);
     if(strncmp(ptr,"ls",2)==0) ptr+=2;
     ptr = skipSpacesAndTabs(ptr);
+
+    string cmdStr(command);
+    if(!cmdStr.empty() && cmdStr.back()=='&') {
+        cerr << "ls: background execution not supported for built-in commands" << endl;
+        return;
+    }
 
     Flags flags;
     vector<string> filePaths;
@@ -271,7 +262,7 @@ void lsCommand(const char* command) {
         }
 
         if(S_ISDIR(st.st_mode)) {
-            DIR* currDirectory = opendir(filePaths[i].c_str());
+            DIR *currDirectory = opendir(filePaths[i].c_str());
             if(!currDirectory) {
                 perror(("ls: " + filePaths[i]).c_str());
                 continue;

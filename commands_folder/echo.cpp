@@ -6,11 +6,17 @@
 using namespace std;
 
 void echoCommand(const char* command) {
-    const char* p = command+4;                 
-    while (*p == ' ' || *p == '\t') ++p;    
+    string cmdStr(command);
+    if(!cmdStr.empty() && cmdStr.back()=='&') {
+        cerr << "echo: background execution not supported for built-in commands" << endl;
+        return;
+    }
 
-    if (*p == '\0') {                       
-        cout << '\n';
+    const char *p = command+4;                 
+    skipSpacesAndTabs(p);   
+
+    if(*p=='\0') {                       
+        cout << endl;
         return;
     }
 
@@ -18,15 +24,16 @@ void echoCommand(const char* command) {
     bool pendingSpace = false;
 
     while (*p) {
-        if (*p == ' ' || *p == '\t') {
+        if(*p==' ' || *p=='\t') {
             pendingSpace = true;
-        } else {
-            if (pendingSpace && outputStarted) cout << ' ';
+        } 
+        else {
+            if (pendingSpace && outputStarted) {cout << ' ';}
             cout << *p;
             outputStarted = true;
             pendingSpace = false;
         }
         ++p;
     }
-    cout << '\n';
+    cout << endl;
 }

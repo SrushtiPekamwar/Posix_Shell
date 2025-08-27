@@ -8,6 +8,7 @@
 // // cd → “go home, trust $HOME (or fallback)”
 // // cd ~ → “expand ~ explicitly to $HOME and then go there”
 // // handle invalid number of arguments
+// add if & is present then it is not availble for background process
 
 
 // need to make multiple changes in the cd
