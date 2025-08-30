@@ -30,7 +30,9 @@ string readUserInput(string &prompt) {
     cout.flush();
 
     char *line = readline(prompt.c_str()); // this will read the initial prompt and also read the input from the command line 
-    // if(!line) return ""; // if ctrl+d is pressed then nullptr is passed
+    if(!line) {  
+        return "__CTRL_D__";  // if ctrl+d is pressed then nullptr is passed
+    }
 
     string input(line);
     if(!input.empty()) {

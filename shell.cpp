@@ -1,4 +1,4 @@
- // in cd ~ and ls ~ it should fallback to the actual home directory
+// in cd ~ and ls ~ it should fallback to the actual home directory
 // for pinfo,cd implement that if & is present the background process functionality not present for inbuilt cmds
 #include <iostream>
 #include <unistd.h>
@@ -29,8 +29,6 @@ int main() {
         string prompt = initialPrompt(shellHomeDirectory);
         string userCommand = readUserInput(prompt);
 
-        if(userCommand.empty()) {continue;}
-
         char *userCommandCopy = new char[userCommand.length()+1];
         strcpy(userCommandCopy,userCommand.c_str());
 
@@ -39,15 +37,14 @@ int main() {
 
         while(command) {
             while(*command==' ' || *command=='\t') {command++;}
-
             if(command) {
                 // Shell will be terminated if the user enters exit or pressed ctrl+d
-                if (strcmp(command,"exit")==0) {
+                if(strcmp(command,"exit")==0) {
                     running = false;
                     break;
                 }
 
-                else if(cin.eof()) {
+                else if(strcmp(command,"__CTRL_D__")==0) {
                     running = false;
                     cout << endl;
                     break;
