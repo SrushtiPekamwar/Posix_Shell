@@ -19,9 +19,13 @@ int main() {
     bool running = true;   // if this var becomes false then only we will terminate from the terminal
     string prevDirectory = shellHomeDirectory;
 
+    signal(SIGTTOU,SIG_IGN);  // prevent "tty outsput suspended"
+    signal(SIGTTIN,SIG_IGN);  // prevent background reads suspension
+
     // loading the previous history file 
     stifle_history(20);   // only 20 commands are stored in the history file 
     read_history(getHistoryFile().c_str());
+    signal(SIGCHLD,sigchldHandler);
 
     welcomeBanner();
     
@@ -73,7 +77,7 @@ int main() {
                 }
 
                 else if(strncmp(command,"pinfo",5)==0) {
-                    // pinfoCommand(command);
+                    pinfoCommand(command);
                 }
 
                 else if(strncmp(command,"history",7)==0) {
@@ -85,7 +89,7 @@ int main() {
                 }
 
                 else {
-                    runExternalCommand(command);
+                    runExternalCommand(command,shellHomeDirectory);
                 }
             }
             command = strtok(NULL,";");  // fetching the next command into command if they are separated by ;

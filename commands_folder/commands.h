@@ -13,10 +13,12 @@ void cdCommand(const char *command, string &homeDirectory, string &prevDirectory
 void lsCommand(const char *command);
 string systemHomePath();
 char* skipSpacesAndTabs(char *ptr);
-void runExternalCommand(const char *command);
+void runExternalCommand(const char *command, string shellHomeDirectory);
+void sigchldHandler(int);
 string readUserInput(string &prompt);
 void historyCommand(const char *command);
 string getHistoryFile();
 void searchCommand(const char *command);
+void pinfoCommand(const char* command);
 
 #endif
