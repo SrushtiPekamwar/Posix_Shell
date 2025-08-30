@@ -17,7 +17,7 @@ static bool searchForFile(const char *cwd, char *token) {
         
         // we don't need to search for this hiden files or folders 
         // . means curr directory, .. means parent directory and if the name starts with . then it means hidden file or folder
-        if(fileName[0]=='.' || fileName=="." || fileName=="..") {
+        if(fileName[0]=='.' || fileName==".." || fileName==".") {
             files = readdir(currDirectory);
             continue;
         }

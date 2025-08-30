@@ -48,48 +48,21 @@ int main() {
                     break;
                 }
 
+                else if(strcmp(command,"clear")==0) {
+                    cout << "\033[2J\033[3J\033[H" << flush;   // this will clear the terminal
+                
+                }
+
                 else if(strcmp(command,"__CTRL_D__")==0) {
                     running = false;
                     cout << endl;
                     break;
                 }
 
-                else if(strcmp(command,"clear")==0) {
-                    cout << "\033[2J\033[3J\033[H" << flush;   // this will clear the terminal
-                
-                }
-
-                else if(strncmp(command,"pwd",3)==0) {
-                    pwdCommand(command,shellHomeDirectory);
-                }
-
-
-                else if(strncmp(command,"echo",4)==0) {
-                    echoCommand(command);
-                }
-
-                else if(strncmp(command,"cd",2)==0) {
-                    cdCommand(command,shellHomeDirectory,prevDirectory);
-                }
-
-                else if(strncmp(command,"ls",2)==0) {
-                    lsCommand(command);
-                }
-
-                else if(strncmp(command,"pinfo",5)==0) {
-                    pinfoCommand(command);
-                }
-
-                else if(strncmp(command,"history",7)==0) {
-                    historyCommand(command);
-                }
-
-                else if(strncmp(command,"search",6)==0) {
-                    searchCommand(command);
-                }
-
                 else {
-                    runExternalCommand(command,shellHomeDirectory);
+                    string cmd = command;
+                    // runCommandWithRedirectionAndPipes(cmd, shellHomeDirectory, getpgrp());
+                    executeWithRedirection(command,shellHomeDirectory,prevDirectory);
                 }
             }
             command = strtok(NULL,";");  // fetching the next command into command if they are separated by ;

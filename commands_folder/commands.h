@@ -20,5 +20,7 @@ void historyCommand(const char *command);
 string getHistoryFile();
 void searchCommand(const char *command);
 void pinfoCommand(const char* command);
+// void runCommandWithRedirectionAndPipes(string command, string &shellHomeDirectory, pid_t shellpgid);
+void executeWithRedirection(const char *command, string &homeDirectory, string &prevDirectory);
 
 #endif

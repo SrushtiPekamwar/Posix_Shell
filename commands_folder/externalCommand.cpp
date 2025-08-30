@@ -1,8 +1,5 @@
-// in mac os the cmds like open -a TextEdit are short-lived; test with: sleep 3
-// This is to test whether the foreground and background is working properly
 // <srushtipekamwar@Srushtis-MacBook-Air.local:~> open -a Terminal -W
 // <srushtipekamwar@Srushtis-MacBook-Air.local:~> open -a Terminal -W &
-// [18615] running in background
 #include <iostream>
 #include <vector>
 #include <cstring> 
@@ -19,6 +16,7 @@ string shellHomeDirectory;
 void sigchldHandler(int) {
     int status; 
     pid_t pid;
+    // -1 means wait for any child process, status is where the exit info will be stored, wnohang means don’t block if no child has changed state 
     while((pid=waitpid(-1,&status,WNOHANG))>0) {
         auto it = bgJobsList.find(pid);
         if(it!=bgJobsList.end()) { 
@@ -31,7 +29,7 @@ void sigchldHandler(int) {
 }
 
 void runExternalCommand(const char *command, string direct) {
-    // I need to tokenise this function and then create one args array and then pass this to the execvp command
+    // we need to tokenise this function and then create one args array and then pass this to the execvp command
     bool background = false;
     vector<char*> args;
     shellHomeDirectory = direct;
@@ -72,7 +70,7 @@ void runExternalCommand(const char *command, string direct) {
         if(!background) {tcsetpgrp(STDIN_FILENO,getpid());}
         execvp(args[0],args.data());
         perror("execvp");   // error while executing the execvp command
-        _exit(1);
+        return;
     } 
     else if(pid>0) {
         setpgid(pid,pid); // give child its separate process group

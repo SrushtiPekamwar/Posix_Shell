@@ -1,6 +1,8 @@
 #include "commands.h"
 #include <iostream>
 #include <cstring>
+#include <fcntl.h>
+#include <unistd.h>
 using namespace std;
 
 void echoCommand(const char* command) {
