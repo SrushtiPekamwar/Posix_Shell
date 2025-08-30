@@ -23,10 +23,9 @@ static string getHostname() {
 static string getCurrentDirectory(string &homeDir, int flag) {
     char currentPath[256];   // absolute path of the cwd
     if(getcwd(currentPath,sizeof(currentPath))) {
-        string currentPathString=currentPath;
+        string currentPathString = currentPath;
         if(flag==0) { // means it is used for the initial prompting of the shell 
-            if(currentPathString.size()>=homeDir.size() && 
-            currentPathString.substr(0,homeDir.size())==homeDir) {
+            if(currentPathString.size()>=homeDir.size()) {
                 return "~" + currentPathString.substr(homeDir.size());
             }
             return currentPathString;
@@ -39,21 +38,19 @@ static string getCurrentDirectory(string &homeDir, int flag) {
 }
 
 void pwdCommand(const char *command, string &shellHomeDirectory) {
-    const char *p = command;
-    p = skipSpacesAndTabs(p);
-    if(strncmp(p,"pwd",3)!=0) return;
-    p+=3;
-    p = skipSpacesAndTabs(p);
-
-    bool isBackground = false;
-    if(*p=='&') {
-        p++;
-        p = skipSpacesAndTabs(p);
-        if(*p=='\0') isBackground = true;
+    char *cmdCp = strdup(command);
+    char *ptr = cmdCp;
+    ptr = skipSpacesAndTabs(ptr);
+    if(strncmp(ptr,"pwd",3)!=0) {
+        free(cmdCp);
+        return;
     }
+    ptr+=3;
+    ptr = skipSpacesAndTabs(ptr);
 
-    if(isBackground) {
+    if(*ptr=='&') {
         cerr << "pwd: background execution not supported for built-in commands" << endl;
+        free(cmdCp);
         return;
     }
 

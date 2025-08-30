@@ -23,8 +23,8 @@
 
 // "cd" must be followed by end-of-string or at least one space/tab.
 // This rejects tokens like "cd." or "cdxyz".
-static bool validCdToken(const char* raw) {
-    const char* p = skipSpacesAndTabs(raw);
+static bool validCdToken(char* raw) {
+    char* p = skipSpacesAndTabs(raw);
     if (std::strncmp(p, "cd", 2) != 0) return false;
     p += 2;
     // allow end or whitespace; anything else (like '.') is invalid
@@ -32,8 +32,8 @@ static bool validCdToken(const char* raw) {
 }
 
 // Parse at most one argument after "cd"
-static void splitOneArg(const char* raw, std::vector<std::string>& argsOut) {
-    const char* p = skipSpacesAndTabs(raw);  // -> "cd..."
+static void splitOneArg(char* raw, std::vector<std::string>& argsOut) {
+    char* p = skipSpacesAndTabs(raw);  // -> "cd..."
     p += 2;                                  // skip "cd"
     p = skipSpacesAndTabs(p);                // skip spaces after cd
 
@@ -59,17 +59,21 @@ static std::string expandTilde(const std::string& path, const std::string& shell
 }
 
 void cdCommand(const char* command, std::string& shellHome, std::string& prevDir) {
+    char *cmdCp = strdup(command);
+    char *cmdCopy = cmdCp;
     // 1) Ensure the token is truly "cd" (not "cd." etc.)
-    if (!validCdToken(command)) {
+    if (!validCdToken(cmdCopy)) {
         std::cerr << "Invalid arguments" << std::endl;
+        free(cmdCp);
         return;
     }
 
     // 2) Parse arguments (0 or 1 allowed)
     std::vector<std::string> args;
-    splitOneArg(command, args);
+    splitOneArg(cmdCopy, args);
     if (args.size() > 1) {
         std::cerr << "Invalid arguments" << std::endl;
+        free(cmdCp);
         return;
     }
 
@@ -84,6 +88,7 @@ void cdCommand(const char* command, std::string& shellHome, std::string& prevDir
         isDash = true;
         if (prevDir.empty()) {
             std::cerr << "cd: previous directory not set" << std::endl;
+            free(cmdCp);
             return;
         }
         target = prevDir;   // we'll print new CWD after switching
@@ -96,11 +101,13 @@ void cdCommand(const char* command, std::string& shellHome, std::string& prevDir
     char oldCwd[1024];
     if (!getcwd(oldCwd, sizeof(oldCwd))) {
         perror("cd");
+        free(cmdCp);
         return;
     }
 
     if (chdir(target.c_str()) != 0) {
         perror("cd");
+        free(cmdCp);
         return;
     }
 
@@ -114,4 +121,5 @@ void cdCommand(const char* command, std::string& shellHome, std::string& prevDir
             std::cout << newCwd << std::endl;
         }
     }
+    free(cmdCp);
 }

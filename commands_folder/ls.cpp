@@ -208,7 +208,7 @@ static string interpretingTokens(string& token) {
 // -l means show the list of all the files in detail
 
 // we will use this for -a and -l and any combination of al and also to parse flags like . .. ~
-static bool parseOnlyFlagsAndPaths(const char *ptr, Flags &flags, vector<string> &filePaths) {
+static bool parseOnlyFlagsAndPaths(char *ptr, Flags &flags, vector<string> &filePaths) {
     ptr = skipSpacesAndTabs(ptr);
     while (*ptr) {
         string token;
@@ -237,19 +237,25 @@ static bool parseOnlyFlagsAndPaths(const char *ptr, Flags &flags, vector<string>
 }
 
 void lsCommand(const char *command) {
-    const char *ptr = skipSpacesAndTabs(command);
+    char *cmdCopy = strdup(command);
+    char *ptr = cmdCopy;
+    ptr = skipSpacesAndTabs(ptr);
     if(strncmp(ptr,"ls",2)==0) ptr+=2;
     ptr = skipSpacesAndTabs(ptr);
 
     string cmdStr(command);
     if(!cmdStr.empty() && cmdStr.back()=='&') {
         cerr << "ls: background execution not supported for built-in commands" << endl;
+        
         return;
     }
 
     Flags flags;
     vector<string> filePaths;
-    if(parseOnlyFlagsAndPaths(ptr,flags,filePaths)==false) return;
+    if(parseOnlyFlagsAndPaths(ptr,flags,filePaths)==false) {
+        free(cmdCopy);
+        return;
+    }
     if(filePaths.empty()) filePaths.push_back(".");
     sort(filePaths.begin(),filePaths.end());
 
@@ -280,5 +286,5 @@ void lsCommand(const char *command) {
             cout << currPath << endl;
         }
     }
-
+    free(cmdCopy);
 }

@@ -6,8 +6,6 @@
 
 using namespace std;
 
-static bool arrowBinding = true;
-
 static int downArrowKeyPressed(int count, int key) {
     rl_named_function("next-history")(count,key);
     rl_redisplay();
@@ -23,11 +21,8 @@ static int upArrowKeyPressed(int count, int key) {
 }
 
 static void bindToArrowKeys() {
-    arrowBinding = false;
-    if(arrowBinding) return;
     rl_bind_keyseq(const_cast<char*>("\e[A"),upArrowKeyPressed); 
     rl_bind_keyseq(const_cast<char*>("\e[B"),downArrowKeyPressed); 
-    arrowBinding = true;
 }
 
 string readUserInput(string &prompt) {
@@ -35,11 +30,11 @@ string readUserInput(string &prompt) {
     cout.flush();
 
     char *line = readline(prompt.c_str()); // this will read the initial prompt and also read the input from the command line 
-    if(!line) return ""; // if ctrl+d is pressed then nullptr is passed
+    // if(!line) return ""; // if ctrl+d is pressed then nullptr is passed
 
     string input(line);
     if(!input.empty()) {
-        add_history(line);
+        add_history(line);   // this will add the command into the history
     }
     free(line);
     return input;

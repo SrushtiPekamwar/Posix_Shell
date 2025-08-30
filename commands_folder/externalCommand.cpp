@@ -1,73 +1,72 @@
 // in mac os the cmds like open -a TextEdit are short-lived; test with: sleep 3
+// This is to test whether the foreground and background is working properly
+// <srushtipekamwar@Srushtis-MacBook-Air.local:~> open -a Terminal -W
+// <srushtipekamwar@Srushtis-MacBook-Air.local:~> open -a Terminal -W &
+// [18615] running in background
 #include <iostream>
 #include <vector>
-#include <cstring>     // strtok, strlen, strdup
-#include <unistd.h>    // fork, execvp
-#include <sys/wait.h>  // waitpid
+#include <cstring> 
+#include <unistd.h>
+#include <sys/wait.h>
+
+
+// use the wait signal
 
 using namespace std;
 
-void runExternalCommand(const char* command) {
-    // make a writable copy (strtok modifies the string)
-    char* cmdCopy = ::strdup(command);
-    if (!cmdCopy) return;
-
-    vector<char*> argv;
+void runExternalCommand(const char *command) {
+    // I need to tokenise this function and then create one args array and then pass this to the execvp command
     bool background = false;
+    vector<char*> args;
 
-    // tokenize on spaces/tabs
-    for (char* tok = ::strtok(cmdCopy, " \t"); tok; tok = ::strtok(nullptr, " \t")) {
-        size_t n = ::strlen(tok);
-
-        // Case 1: a standalone "&"
-        if (n == 1 && tok[0] == '&') {
-            background = true;
-            continue; // don't include in argv
-        }
-
-        // Case 2: token ends with '&' stuck to the last arg (e.g., "sleep&" or "sleep&")
-        if (n > 0 && tok[n - 1] == '&') {
-            background = true;
-            tok[n - 1] = '\0';       // strip the '&'
-            if (tok[0] == '\0') {
-                // token became empty (it was just "&"), skip pushing it
-                continue;
-            }
-        }
-
-        argv.push_back(tok);
+    char *cmdCp = strdup(command);
+    char *cmdCopy = cmdCp;
+    if(!cmdCopy) {
+        free(cmdCp);
+        return;
     }
-    argv.push_back(nullptr);
+    char *token = strtok(cmdCopy," \t");   // let's say command is open -a TextEdit & then we need to tokenise it using spaces and tabs
 
-    // Nothing to exec after stripping '&'
-    if (argv.size() <= 1) { // only nullptr present
-        ::free(cmdCopy);
+    while(token) {
+        if(strcmp(token,"&")==0) {
+            // if it is & then we don't need to add it to the arguments array
+            background = true;  // means we need to run it in the background
+        }
+        else {
+            args.push_back(token);
+        }
+        token = strtok(NULL," \t");
+    }
+    args.push_back(NULL);  // execvp requires null terminated array
+
+    if (args.empty()) {
+        free(cmdCp);
         return;
     }
 
-    pid_t pid = ::fork();
-    if (pid < 0) {
-        perror("fork");
-        ::free(cmdCopy);
-        return;
-    }
+    // we need to create a child process so that we can replace its image with the external command using execvp
+    pid_t pid = fork();  
 
-    if (pid == 0) {
-        // child
-        ::execvp(argv[0], argv.data());
-        // only if exec fails:
+    // if the pid = 0 then we will run our command in this process 
+    if(pid==0) {
+        execvp(args[0],args.data());
         perror("execvp");
-        _exit(127);
-    } else {
-        // parent
-        if (background) {
-            // do not wait; print bg pid
-            std::cout << pid << std::endl;
-        } else {
-            int status = 0;
-            if (::waitpid(pid, &status, 0) < 0) perror("waitpid");
+        _exit(1);
+    } 
+    else if(pid>0) {
+        if(background) {
+           cout << "[" << pid << "] running in background" << endl;
+        }
+        else {
+            // if it is not running in the background then the parent process should wait for the child process to complete its execution
+            int status;
+            waitpid(pid,&status,0);  // we need to wait only for the background process
         }
     }
+    else {
+        perror("fork");
+    }
 
-    ::free(cmdCopy);  // free the strdup'd buffer in parent
+    free(cmdCp);
+    return;
 }

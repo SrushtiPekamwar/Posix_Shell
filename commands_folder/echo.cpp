@@ -1,39 +1,41 @@
-// if you want to make changes then handle the " " and if spaces are present then print as it is
-// undestand this file and make changes to this
 #include "commands.h"
 #include <iostream>
 #include <cstring>
 using namespace std;
 
 void echoCommand(const char* command) {
-    string cmdStr(command);
-    if(!cmdStr.empty() && cmdStr.back()=='&') {
+    char *cmdCopy = strdup(command);
+    char *ptr = cmdCopy;
+    ptr+=4;                 
+    ptr = skipSpacesAndTabs(ptr);   
+    if(*ptr=='&') {
         cerr << "echo: background execution not supported for built-in commands" << endl;
+        free(cmdCopy);
         return;
     }
 
-    const char *p = command+4;                 
-    skipSpacesAndTabs(p);   
-
-    if(*p=='\0') {                       
+    // if nothing is present after echo or only spaces are there then just print new line
+    if(*ptr=='\0') {                       
         cout << endl;
+        free(cmdCopy);
         return;
     }
 
     bool outputStarted = false;
     bool pendingSpace = false;
 
-    while (*p) {
-        if(*p==' ' || *p=='\t') {
+    while (*ptr) {
+        if(*ptr==' ' || *ptr=='\t') {
             pendingSpace = true;
         } 
         else {
-            if (pendingSpace && outputStarted) {cout << ' ';}
-            cout << *p;
+            if(pendingSpace && outputStarted) {cout << ' ';}  // this will ensure that all the whitespaces will be replaced with single whitespace
+            cout << *ptr;
             outputStarted = true;
             pendingSpace = false;
         }
-        ++p;
+        ++ptr;
     }
     cout << endl;
+    free(cmdCopy);
 }

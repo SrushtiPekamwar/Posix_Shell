@@ -1,5 +1,4 @@
-// in the search no need to consider the hidden files 
-// in cd ~ and ls ~ it should fallback to the actual home directory
+ // in cd ~ and ls ~ it should fallback to the actual home directory
 // for pinfo,cd implement that if & is present the background process functionality not present for inbuilt cmds
 #include <iostream>
 #include <unistd.h>
@@ -7,28 +6,35 @@
 #include <pwd.h>
 #include <string>
 #include "commands_folder/commands.h"
+#include <readline/history.h>
 
 using namespace std;
 
 int main() {
-    char buffer[256];
+    char buffer[1024];
     string shellHomeDirectory;
-    if (getcwd(buffer,sizeof(buffer))) {
+    if(getcwd(buffer,sizeof(buffer))) {
         shellHomeDirectory = string(buffer);
     }
-    bool running = true;
+    bool running = true;   // if this var becomes false then only we will terminate from the terminal
     string prevDirectory = shellHomeDirectory;
+
+    // loading the previous history file 
+    stifle_history(20);   // only 20 commands are stored in the history file 
+    read_history(getHistoryFile().c_str());
+
+    welcomeBanner();
     
     while(running) {
         string prompt = initialPrompt(shellHomeDirectory);
         string userCommand = readUserInput(prompt);
 
-        if (userCommand.empty()) {continue;}
+        if(userCommand.empty()) {continue;}
 
         char *userCommandCopy = new char[userCommand.length()+1];
         strcpy(userCommandCopy,userCommand.c_str());
 
-        // command without any ;
+        // command without any semi colon ;
         const char *command = strtok(userCommandCopy,";");
 
         while(command) {
@@ -47,39 +53,38 @@ int main() {
                     break;
                 }
 
-                else if(strncmp(command,"pwd",3)==0 &&
-                        (command[3]=='\0' || command[3]==' ' || command[3]=='\t' || command[3]=='&')) {
-                    pwdCommand(command, shellHomeDirectory);
-                }
-
                 else if(strcmp(command,"clear")==0) {
-                    cout << "\033[2J\033[3J\033[H" << flush;
+                    cout << "\033[2J\033[3J\033[H" << flush;   // this will clear the terminal
                 
                 }
+
+                else if(strncmp(command,"pwd",3)==0) {
+                    pwdCommand(command,shellHomeDirectory);
+                }
+
 
                 else if(strncmp(command,"echo",4)==0) {
                     echoCommand(command);
                 }
 
-                else if(strncmp(command,"cd",2)==0 && 
-                       (command[2]=='\0' || command[2]==' ' || command[2]=='\t')) {
-                    cdCommand(command, shellHomeDirectory, prevDirectory);
+                else if(strncmp(command,"cd",2)==0) {
+                    cdCommand(command,shellHomeDirectory,prevDirectory);
                 }
 
-                else if(strncmp(command,"ls",2)==0 &&
-                       (command[2]=='\0' || command[2]==' ' || command[2]=='\t')) {
+                else if(strncmp(command,"ls",2)==0) {
                     lsCommand(command);
                 }
 
-                else if(strncmp(command,"history",7)==0 &&
-                        (command[7]=='\0' || command[7]==' ' || command[7]=='\t')) {
+                else if(strncmp(command,"pinfo",5)==0) {
+                    // pinfoCommand(command);
+                }
+
+                else if(strncmp(command,"history",7)==0) {
                     historyCommand(command);
                 }
 
-                // this is for pinfo, implement it later 
-                else if(strncmp(command,"pinfo",5)==0 &&
-                        (command[5]=='\0' || command[5]==' ' || command[5] =='\t')) {
-                    // pinfoCommand(command);
+                else if(strncmp(command,"search",6)==0) {
+                    searchCommand(command);
                 }
 
                 else {
@@ -90,7 +95,11 @@ int main() {
         }
         delete[] userCommandCopy;
     }
-    cout << "You have exited from Srushti's terminal" << endl;
+
+    // write to the history file before exiting 
+    write_history(getHistoryFile().c_str());
+
+    exitBanner();
     
     return 0;
 }
