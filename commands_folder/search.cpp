@@ -1,21 +1,48 @@
 #include <iostream>
 #include "commands.h"
 #include <dirent.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 using namespace std;
 
-struct fileDetails {
-    string name;
-    string path;
-    unsigned char dtype;
-    struct stat st{};
-};
+static bool searchForFile(const char *cwd, char *token) {
+    DIR *currDirectory = opendir(cwd);
+    if(!currDirectory) return false;   // this may be because you don't have permissions to access this directory
 
-static bool searchForFile(char *token) {
+    struct dirent *files;
+    files = readdir(currDirectory);
+    while(files) {
+        string fileName = files->d_name;
+        
+        // we don't need to search for this hiden files or folders 
+        // . means curr directory, .. means parent directory and if the name starts with . then it means hidden file or folder
+        if(fileName[0]=='.' || fileName=="." || fileName=="..") {
+            files = readdir(currDirectory);
+            continue;
+        }
 
+        // if the filename matches with the token name then just return true
+        if(strcmp(fileName.c_str(),token)==0) {
+            closedir(currDirectory);
+            return true;
+        }
 
-    return true;
+        // if it does not match then check whether it is a directory and if it is a directory then go and search in that directory
+        string fullPath = string(cwd) + "/" + fileName;  // we need full path so that we can open that directory and get the stats
+
+        struct stat st;
+        if(stat(fullPath.c_str(),&st)==0 && S_ISDIR(st.st_mode)) {
+            if(searchForFile(fullPath.c_str(),token)) {
+                closedir(currDirectory);
+                return true;
+            }
+        }
+        files = readdir(currDirectory);
+    }
+
+    closedir(currDirectory);
+    return false;
 }
 
 // no need to search in the hidden files
@@ -23,76 +50,38 @@ void searchCommand(const char *command) {
     char *cmdCopyOrig = strdup(command);
     char *cmdCopy = cmdCopyOrig;
     skipSpacesAndTabs(cmdCopy);
-    cmdCopy+=6;   // skipping the word search
+    cmdCopy+=strlen("search");   // skipping the word search
     skipSpacesAndTabs(cmdCopy);
 
     if(!cmdCopy) return;
     
+    vector<string> tokens;
     char *token = strtok(cmdCopy," \t");  // tokenise using the spaces and delimiters
-    vector<char*> tokens;
 
     while(token) {
         if(strcmp(token,"&")==0) {
-             cerr << "search: background execution not supported for built-in commands" << endl;
+            cerr << "search: background execution not supported for built-in commands" << endl;
+            free(cmdCopyOrig);
             return;
         }
-
-        tokens.push_back(token);
-        
-        token = strtok(NULL," \t");
+        tokens.push_back(string(token));
+        token = strtok(NULL," \t");    // fetching the next token
     }
 
     free(cmdCopyOrig);
-
     if (tokens.empty()) {
         cerr << "search: there should be atleast one operand in search command" << endl;
         return;
     }
+
+    // start searching from the cwd 
+    char cwd[1024];
+    getcwd(cwd,sizeof(cwd));
+
+    // now loop about all the arguments of the tokens and then search whether the file or directory is present or not
+    for(auto file: tokens) {
+        if(searchForFile(cwd,(char*)file.c_str())) cout << "true" << endl;
+        else cout << "false" << endl;
+    }
+
 }
-
-// void lsCommand(const char *command) {
-//     const char *ptr = skipSpacesAndTabs(command);
-//     if(strncmp(ptr,"ls",2)==0) ptr+=2;
-//     ptr = skipSpacesAndTabs(ptr);
-
-//     string cmdStr(command);
-//     if(!cmdStr.empty() && cmdStr.back()=='&') {
-//         cerr << "ls: background execution not supported for built-in commands" << endl;
-//         return;
-//     }
-
-//     Flags flags;
-//     vector<string> filePaths;
-//     if(parseOnlyFlagsAndPaths(ptr,flags,filePaths)==false) return;
-//     if(filePaths.empty()) filePaths.push_back(".");
-//     sort(filePaths.begin(),filePaths.end());
-
-//     for(ssize_t i=0;i<filePaths.size();++i) {
-//         string &currPath = filePaths[i];
-//         struct stat st{};
-//         if(lstat(currPath.c_str(),&st)!=0) {
-//             perror(("ls: " + currPath).c_str());
-//             continue;
-//         }
-
-//         if(S_ISDIR(st.st_mode)) {
-//             DIR *currDirectory = opendir(filePaths[i].c_str());
-//             if(!currDirectory) {
-//                 perror(("ls: " + filePaths[i]).c_str());
-//                 continue;
-//             }
-
-//             vector<fileDetails> filesArray;
-//             string basePath = filePaths[i];
-//             populateFilesArray(filesArray,currDirectory,basePath,flags._a);
-
-//             if(filePaths.size()>1) cout << filePaths[i] << ":" << endl;
-//             printFiles(filesArray,flags._l);
-//             if((i+1)<filePaths.size()) cout << endl;
-//         }
-//         else {
-//             cout << currPath << endl;
-//         }
-//     }
-
-// }
