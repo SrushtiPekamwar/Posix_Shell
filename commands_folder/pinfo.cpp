@@ -16,6 +16,12 @@ void pinfoCommand(const char* command) {
     ptr += 5; // skip the word pinfo
     ptr = skipSpacesAndTabs(ptr);
 
+    if(*ptr=='&') {
+        cerr << "pinfo: background execution not supported for built-in commands" << endl;
+        free(cmdCp);
+        return;
+    }
+
     pid_t pid;
     if(*ptr=='\0') {
         // means no args are present so fetch the pid of the working shell

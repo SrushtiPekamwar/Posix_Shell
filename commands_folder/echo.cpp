@@ -27,9 +27,9 @@ void echoCommand(const char* command) {
     bool pendingSpace = false;
     bool quotes = false;
 
-    while (*ptr) {
-        if (*ptr == '"') {
-            if(pendingSpace && outputStarted) { 
+    while(*ptr) {
+        if(*ptr=='"') {
+            if(pendingSpace && outputStarted && !quotes) { 
                 cout << ' '; 
                 pendingSpace = false; 
             }
@@ -37,19 +37,20 @@ void echoCommand(const char* command) {
             quotes = !quotes;
             outputStarted = true;
         } 
-
-        else if((*ptr==' ' || *ptr=='\t')) {
-            if(quotes) cout << ' ';
-            pendingSpace = true;
+        else if((*ptr==' ' || *ptr=='\t') && !quotes) {
+            pendingSpace = true; 
         } 
         else {
-            if(pendingSpace && outputStarted) {cout << ' ';}  // this will ensure that all the whitespaces will be replaced with single whitespace
-            cout << *ptr;
+            if(pendingSpace && outputStarted && !quotes) { 
+                cout << ' '; 
+                pendingSpace = false; 
+            }
+            cout << *ptr;   
             outputStarted = true;
-            pendingSpace = false;
         }
         ++ptr;
     }
+
     cout << endl;
     free(cmdCopy);
 }
