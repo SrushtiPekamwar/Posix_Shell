@@ -38,7 +38,8 @@ void echoCommand(const char* command) {
             outputStarted = true;
         } 
 
-        else if((*ptr==' ' || *ptr=='\t') && !quotes) {
+        else if((*ptr==' ' || *ptr=='\t')) {
+            if(quotes) cout << ' ';
             pendingSpace = true;
         } 
         else {
