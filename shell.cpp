@@ -44,6 +44,7 @@ int main() {
             if(command) {
                 // Shell will be terminated if the user enters exit or pressed ctrl+d
                 if(strcmp(command,"exit")==0) {
+                    cout << "here" << endl;
                     running = false;
                     break;
                 }
@@ -60,9 +61,15 @@ int main() {
                 }
 
                 else {
-                    string cmd = command;
-                    // runCommandWithRedirectionAndPipes(cmd, shellHomeDirectory, getpgrp());
-                    executeWithRedirection(command,shellHomeDirectory,prevDirectory);
+                    // strchr will return the ptr to the first occurrence of |
+                    if(strchr(command,'|')) {
+                        executePipeline(command,shellHomeDirectory);
+                    }
+                    else {
+                        string cmd = command;
+                        // runCommandWithRedirectionAndPipes(cmd, shellHomeDirectory, getpgrp());
+                        executeWithRedirection(command,shellHomeDirectory,prevDirectory);
+                    }
                 }
             }
             command = strtok(NULL,";");  // fetching the next command into command if they are separated by ;
@@ -72,7 +79,6 @@ int main() {
 
     // write to the history file before exiting 
     write_history(getHistoryFile().c_str());
-
     exitBanner();
     
     return 0;

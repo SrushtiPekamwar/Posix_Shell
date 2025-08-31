@@ -31,7 +31,7 @@ static void restore(int stdInput, int stdOutput) {
     close(stdOutput);
 }
 
-static void parsing(char *command) {
+void parsing(char *command) {
     resetParsingState();
     char *token = strtok(command," \t");
     while(token) {

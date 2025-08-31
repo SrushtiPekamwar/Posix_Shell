@@ -70,7 +70,8 @@ void runExternalCommand(const char *command, string direct) {
         if(!background) {tcsetpgrp(STDIN_FILENO,getpid());}
         execvp(args[0],args.data());
         perror("execvp");   // error while executing the execvp command
-        return;
+        free(cmdCp);
+        _exit(127);
     } 
     else if(pid>0) {
         setpgid(pid,pid); // give child its separate process group

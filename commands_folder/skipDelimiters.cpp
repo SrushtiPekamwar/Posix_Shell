@@ -5,8 +5,18 @@ using namespace std;
 
 // this function will be used everywhere because we are tokenising using ; and hence to skip these spaces and \t this function
 // will be used
-char* skipSpacesAndTabs(char *ptr) {
+char *skipSpacesAndTabs(char *ptr) {
     while(*ptr==' ' || *ptr=='\t') ++ptr; 
+    return ptr;
+}
+
+char *trimFromEnd(char *ptr) {
+    if(!ptr) return ptr;
+    int len = strlen(ptr);
+    while(len>=0 && (ptr[len-1]==' ' || ptr[len-1]=='\t')) {
+        len--;
+        ptr[len] = '\0';
+    }
     return ptr;
 }
 

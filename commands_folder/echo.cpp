@@ -25,9 +25,20 @@ void echoCommand(const char* command) {
 
     bool outputStarted = false;
     bool pendingSpace = false;
+    bool quotes = false;
 
     while (*ptr) {
-        if(*ptr==' ' || *ptr=='\t') {
+        if (*ptr == '"') {
+            if(pendingSpace && outputStarted) { 
+                cout << ' '; 
+                pendingSpace = false; 
+            }
+            cout << '"';
+            quotes = !quotes;
+            outputStarted = true;
+        } 
+
+        else if((*ptr==' ' || *ptr=='\t') && !quotes) {
             pendingSpace = true;
         } 
         else {
