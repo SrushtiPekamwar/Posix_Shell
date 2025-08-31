@@ -40,7 +40,8 @@ void runExternalCommand(const char *command, string direct) {
         free(cmdCp);
         return;
     }
-    char *token = strtok(cmdCopy," \t");   // let's say command is open -a TextEdit & then we need to tokenise it using spaces and tabs
+    char *checkptr = nullptr;
+    char *token = strtok_r(cmdCopy," \t",&checkptr); // let's say command is open -a TextEdit & then we need to tokenise it using spaces and tabs
 
     string fullCommand;
     while(token) {
@@ -53,7 +54,7 @@ void runExternalCommand(const char *command, string direct) {
             if(!fullCommand.empty()) fullCommand += " ";
             fullCommand += token;   // so that we can push it into the background and then keep listening whether the cmd has been completed
         }
-        token = strtok(NULL," \t");
+        token = strtok_r(nullptr," \t",&checkptr);
     }
     args.push_back(NULL);  // execvp requires null terminated array
 

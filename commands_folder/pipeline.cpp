@@ -1,3 +1,7 @@
+// executeWithRedirection(stages[0],shellHomeDirectory,shellHomeDirectory);
+// for every stage redirection parsing change the code and do it according to the redirection.cpp
+// add this if required
+
 #include <unistd.h>
 #include <sys/wait.h>
 #include <cstring>
@@ -5,30 +9,51 @@
 #include <string>
 #include <iostream>
 #include "commands.h"
+#include <fcntl.h>
 
 using namespace std;
 
 // tokenise using |
 static void splitPipeline(char* cmd, vector<char*> &pipelines) {
     pipelines.clear();
-    char *token = strtok(cmd,"|");
+    char *saveptr3 = nullptr;
+    char *token = strtok_r(cmd,"|",&saveptr3);
     while(token) {
         token = skipSpacesAndTabs(token);
         token = trimFromEnd(token);
         if(*token) pipelines.push_back(token);
-        token = strtok(nullptr,"|");
+        token = strtok_r(nullptr,"|",&saveptr3);
     }
 }
 
-// tokenise to make the args array
-static void tokeniseToArgs(char *pipe, vector<char*> &args) {
-    args.clear();
-    char *token = strtok(pipe," \t");
-    while(token) {
-        args.push_back(token);
-        token = strtok(nullptr," \t");
+static void stripQuotes(char* str) {
+    int n = strlen(str);
+    if(n>=2 && str[0]=='"' && str[n-1]=='"') {
+        memmove(str,str+1,n-2);
+        str[n-2] = '\0';
     }
-    args.push_back(nullptr);
+}
+
+static void parseStageRedirections(char *stage, vector<char*> &argv, bool &hasIn,  char inFile[512], bool &hasOut, bool &append, char outFile[512]) {
+    argv.clear();
+    hasIn = false; hasOut = false; append = false;
+    inFile[0] = '\0'; outFile[0] = '\0';
+
+    for (char *tok = strtok(stage, " \t"); tok; tok = strtok(nullptr, " \t")) {
+        if (strcmp(tok, "<") == 0) {
+            tok = strtok(nullptr, " \t");
+            if (tok) { hasIn = true; strncpy(inFile, tok, 511); inFile[511] = '\0'; }
+        } else if (strcmp(tok, ">>") == 0) {
+            tok = strtok(nullptr, " \t");
+            if (tok) { hasOut = true; append = true; strncpy(outFile, tok, 511); outFile[511] = '\0'; }
+        } else if (strcmp(tok, ">") == 0) {
+            tok = strtok(nullptr, " \t");
+            if (tok) { hasOut = true; append = false; strncpy(outFile, tok, 511); outFile[511] = '\0'; }
+        } else {
+            argv.push_back(tok);
+        }
+    }
+    argv.push_back(nullptr);
 }
 
 void executePipeline(const char* command, string &shellHomeDirectory) {
@@ -58,9 +83,10 @@ void executePipeline(const char* command, string &shellHomeDirectory) {
         return; 
     }
 
-    int n = stages.size();
+    int n = (int)stages.size();
     // if there is only single stage then just execute it
     if(n==1) {
+        // executeWithRedirection(stages[0],shellHomeDirectory,shellHomeDirectory);
         runExternalCommand(stages[0],shellHomeDirectory);
         free(line);
         return;
@@ -77,7 +103,7 @@ void executePipeline(const char* command, string &shellHomeDirectory) {
         }
     }
 
-    // Launch each stage
+    // Launching of each stage
     for(int i=0;i<n;++i) {
         char* singleStage = strdup(stages[i]);
         if(!singleStage) { 
@@ -87,21 +113,56 @@ void executePipeline(const char* command, string &shellHomeDirectory) {
 
         vector<char*> args;
         // this will convert each stage into different args so that it can run the single command
-        tokeniseToArgs(singleStage,args);
+        bool hasInputFile = false;
+        bool hasOutputFile = false;
+        bool append = false;
+        char inputFile[512];
+        char outputFile[512];
+        parseStageRedirections(singleStage,args,hasInputFile,inputFile,hasOutputFile,append,outputFile);
+
+        for(int i=0;args[i];++i) stripQuotes(args[i]);
 
         pid_t pid = fork();
         if(pid==0) {
             // for the child we will change the std in and std output
             // if it is not the first pipe then only we can have read end of the prev pipe
-            if(i>0) {
+            if(hasInputFile) {
+                int fd = open(inputFile,O_RDONLY);
+                if(fd<0) { 
+                    perror("open <"); 
+                    _exit(127); 
+                }
+                if(dup2(fd,STDIN_FILENO)<0) { 
+                    perror("dup2 <"); 
+                    _exit(127); 
+                }
+                close(fd);
+            } 
+            else if(i>0) {
                 int inputFd = pipes[2*(i-1)];     // we need to use the read end of the previous pipe
                 if(dup2(inputFd,STDIN_FILENO)<0) { 
                     perror("dup2 stdin"); 
                     _exit(127);   // 127 is used by the shell when the command is not found
                 }
             }
+
+            if(hasOutputFile) {
+                int flags = O_WRONLY | O_CREAT;
+                if(append==true) flags |= O_APPEND;
+                else flags |= O_TRUNC;
+                int fd = open(outputFile,flags,0644);
+                if(fd<0) { 
+                    perror("open >"); 
+                    _exit(127); 
+                }
+                if(dup2(fd,STDOUT_FILENO)<0) { 
+                    perror("dup2 >");
+                    _exit(127); 
+                }
+                close(fd);
+            } 
             // if its not the last stage then only we will have the read end
-            if(i<n-1) {
+            else if(i<n-1) {
                 int outputFd = pipes[2*i+1];    // we need to use the write end of the same pipe
                 if(dup2(outputFd, STDOUT_FILENO)<0) { 
                     perror("dup2 stdout"); 
@@ -113,9 +174,17 @@ void executePipeline(const char* command, string &shellHomeDirectory) {
             for(int k=0;k<pipes.size();++k) close(pipes[k]);
 
             // Exec external command
-            if(args[0]) {
+            if(!args.empty() && args[0]) {
                 const char* finalCommand = stages[i];
                 string commandName = args[0];
+
+                // just for debugging
+                // fprintf(stderr, "[stage %d] in<%s> out<%s%s>\n",
+                // i,
+                // hasInputFile ? inputFile : "-",
+                // hasOutputFile ? outputFile : "-",
+                // hasOutputFile ? (append ? " (append)" : " (truncate)") : "");
+
                 if(commandName=="pwd") {
                     pwdCommand(finalCommand,shellHomeDirectory);
                     _exit(0);  // terminate child cleanly

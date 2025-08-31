@@ -37,7 +37,10 @@ int main() {
         strcpy(userCommandCopy,userCommand.c_str());
 
         // command without any semi colon ;
-        const char *command = strtok(userCommandCopy,";");
+        // we are using strtok_r because in multiple places we are calling strtok where all of them will change the global static
+        // var so this will mess up everything hence we need some checkpoint pointer to resume from the same place
+        char *saveptr = nullptr;
+        const char *command = strtok_r(userCommandCopy,";",&saveptr);
 
         while(command) {
             while(*command==' ' || *command=='\t') {command++;}
@@ -71,7 +74,7 @@ int main() {
                     }
                 }
             }
-            command = strtok(NULL,";");  // fetching the next command into command if they are separated by ;
+            command = strtok_r(nullptr,";",&saveptr);  // fetching the next command into command if they are separated by ;
         }
         delete[] userCommandCopy;
     }

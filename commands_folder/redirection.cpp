@@ -33,17 +33,18 @@ static void restore(int stdInput, int stdOutput) {
 
 void parsing(char *command) {
     resetParsingState();
-    char *token = strtok(command," \t");
+    char *saveptr4 = nullptr;
+    char *token = strtok_r(command," \t",&saveptr4);
     while(token) {
         if(strcmp(token,">")==0) {
-            token = strtok(NULL," \t");
+            token = strtok_r(nullptr," \t",&saveptr4);
             if(token) {
                 hasOutputFile = true;
                 strcpy(outputFile,token);
             }
         }
         else if(strcmp(token,">>")==0) {
-            token = strtok(NULL," \t");
+            token = strtok_r(nullptr," \t",&saveptr4);
             if(token) {
                 hasOutputFile = true;
                 append = true;
@@ -51,7 +52,7 @@ void parsing(char *command) {
             }
         }
         else if(strcmp(token,"<")==0) {
-            token = strtok(NULL," \t");
+            token = strtok_r(nullptr," \t",&saveptr4);
             if(token) {
                 hasInputFile = true;
                 strcpy(inputFile,token);
@@ -61,7 +62,7 @@ void parsing(char *command) {
             tokens.push_back(token);
         }
 
-        token = strtok(NULL," \t");
+        token = strtok_r(nullptr," \t",&saveptr4);
     }
 }
 

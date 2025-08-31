@@ -56,7 +56,8 @@ void searchCommand(const char *command) {
     if(!cmdCopy) return;
     
     vector<string> tokens;
-    char *token = strtok(cmdCopy," \t");  // tokenise using the spaces and delimiters
+    char *saveptr2 = nullptr;
+    char *token = strtok_r(cmdCopy," \t",&saveptr2); // tokenise using the spaces and delimiters
 
     while(token) {
         if(strcmp(token,"&")==0) {
@@ -65,7 +66,7 @@ void searchCommand(const char *command) {
             return;
         }
         tokens.push_back(string(token));
-        token = strtok(NULL," \t");    // fetching the next token
+        token = strtok_r(nullptr," \t",&saveptr2);    // fetching the next token
     }
 
     free(cmdCopyOrig);
