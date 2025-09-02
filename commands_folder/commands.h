@@ -25,6 +25,8 @@ void pinfoCommand(const char* command);
 void executeWithRedirection(const char *command, string &homeDirectory, string &prevDirectory);
 void parsing(char *command);
 void executePipeline(const char* command, string &shellHomeDirectory);
+char** autocompletion(const char* text, int start, int end);
+void loadSystemCommands();
 
 #endif
  

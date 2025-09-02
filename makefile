@@ -37,7 +37,8 @@ SRCS   := shell.cpp \
           commands_folder/pinfo.cpp \
           commands_folder/signals.cpp \
           commands_folder/redirection.cpp \
-          commands_folder/pipeline.cpp
+          commands_folder/pipeline.cpp \
+          commands_folder/autocomplete.cpp
 OBJS   := $(patsubst %.cpp,%.o,$(SRCS))
 
 all: $(TARGET)

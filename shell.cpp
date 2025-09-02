@@ -7,10 +7,11 @@
 #include <string>
 #include "commands_folder/commands.h"
 #include <readline/history.h>
+#include <readline/readline.h>
 
 using namespace std;
 
-int main() {
+int main() {    
     char buffer[1024];
     string shellHomeDirectory;
     if(getcwd(buffer,sizeof(buffer))) {
@@ -26,6 +27,10 @@ int main() {
     stifle_history(20);   // only 20 commands are stored in the history file 
     read_history(getHistoryFile().c_str());
     signal(SIGCHLD,sigchldHandler);
+
+    // for autocompletion, when tab function is used
+    rl_attempted_completion_function = autocompletion;  
+    loadSystemCommands();
 
     welcomeBanner();
     
@@ -47,14 +52,12 @@ int main() {
             if(command) {
                 // Shell will be terminated if the user enters exit or pressed ctrl+d
                 if(strcmp(command,"exit")==0) {
-                    cout << "here" << endl;
                     running = false;
                     break;
                 }
 
                 else if(strcmp(command,"clear")==0) {
                     cout << "\033[2J\033[3J\033[H" << flush;   // this will clear the terminal
-                
                 }
 
                 else if(strcmp(command,"__CTRL_D__")==0) {
