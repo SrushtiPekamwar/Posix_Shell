@@ -246,7 +246,6 @@ void lsCommand(const char *command) {
     string cmdStr(command);
     if(!cmdStr.empty() && cmdStr.back()=='&') {
         cerr << "ls: background execution not supported for built-in commands" << endl;
-        
         return;
     }
 

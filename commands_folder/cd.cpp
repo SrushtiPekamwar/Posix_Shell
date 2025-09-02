@@ -1,18 +1,3 @@
-// // cd . -> stay in the same directory but still call chdir(.)
-// // cd .. -> go to the previous directory 
-// // If your current working directory is the directory from which your shell is invoked, then
-// // on executing command "cd .." your shell should display the absolute path of the current directory from the root.
-// // cd - --> goes to the previous working directory and also prints the path
-// // cd --> Go to the home directory 
-// // cd ~ --> go to the actual home of the system
-// // cd → “go home, trust $HOME (or fallback)”
-// // cd ~ → “expand ~ explicitly to $HOME and then go there”
-// // handle invalid number of arguments
-// add if & is present then it is not availble for background process
-
-
-// need to make multiple changes in the cd
-
 #include "commands.h"
 #include <iostream>
 #include <vector>
@@ -21,104 +6,114 @@
 #include <unistd.h>
 #include <errno.h>
 
-// "cd" must be followed by end-of-string or at least one space/tab.
-// This rejects tokens like "cd." or "cdxyz".
-static bool validCdToken(char* raw) {
-    char* p = skipSpacesAndTabs(raw);
-    if (std::strncmp(p, "cd", 2) != 0) return false;
-    p += 2;
+using namespace std;
+
+static bool validCdToken(char *command) {
+    char* ptr = skipSpacesAndTabs(command);
+    if(strncmp(ptr,"cd",2)!=0) return false;
+    ptr += 2; // skip cd
+
     // allow end or whitespace; anything else (like '.') is invalid
-    return (*p == '\0' || *p == ' ' || *p == '\t');
+    return (*ptr=='\0' || *ptr==' ' || *ptr=='\t');
 }
 
-// Parse at most one argument after "cd"
-static void splitOneArg(char* raw, std::vector<std::string>& argsOut) {
-    char* p = skipSpacesAndTabs(raw);  // -> "cd..."
-    p += 2;                                  // skip "cd"
-    p = skipSpacesAndTabs(p);                // skip spaces after cd
+static void extractArgs(char *command, vector<string> &args) {
+    char *ptr = skipSpacesAndTabs(command); 
+    ptr += 2;        
+    ptr = skipSpacesAndTabs(ptr);                                
 
-    std::string curr;
-    while (*p) {
-        if (*p == ' ' || *p == '\t') {
-            if (!curr.empty()) { argsOut.push_back(curr); curr.clear(); }
-            p = skipSpacesAndTabs(p);        // collapse consecutive spaces/tabs
-        } else {
-            curr.push_back(*p++);
+    string curr;
+    while(*ptr) {
+        if(*ptr==' ' || *ptr=='\t') {
+            if(!curr.empty()) {
+                args.push_back(curr);
+                curr.clear();
+            }
+            ptr = skipSpacesAndTabs(ptr);
+        }
+        else {
+            curr.push_back(*ptr);
+            ptr++;
         }
     }
-    if (!curr.empty()) argsOut.push_back(curr);
+    if(!curr.empty()) args.push_back(curr);
 }
 
-// Expand ~ to the shell's launch directory
-static std::string expandTilde(const std::string& path, const std::string& shellHome) {
-    if (!path.empty() && path[0]=='~') {
-        if (path.size()==1) return shellHome;
-        if (path[1]=='/')  return shellHome + path.substr(1);
+// when it is ~ then we need to go to the system's home directory
+static string expandTilde(string &token) {
+    string shellHomePath = systemHomePath();
+    if(!token.empty() && token[0]=='~') {
+        if(token.size()==1) return shellHomePath;
+        if(token[1]=='/') return shellHomePath + token.substr(1);
     }
-    return path;
+    return token;
 }
 
-void cdCommand(const char* command, std::string& shellHome, std::string& prevDir) {
+void cdCommand(const char *command, string &shellHome, string &prevDir) {
     char *cmdCp = strdup(command);
-    char *cmdCopy = cmdCp;
-    // 1) Ensure the token is truly "cd" (not "cd." etc.)
-    if (!validCdToken(cmdCopy)) {
-        std::cerr << "Invalid arguments" << std::endl;
+    char *ptr = cmdCp;
+
+    if(!validCdToken(ptr)) {
+        cerr << "Invalid arguments for cd command" << endl;
         free(cmdCp);
         return;
     }
 
-    // 2) Parse arguments (0 or 1 allowed)
-    std::vector<std::string> args;
-    splitOneArg(cmdCopy, args);
-    if (args.size() > 1) {
-        std::cerr << "Invalid arguments" << std::endl;
+    string cmdStr(ptr);
+    if(!cmdStr.empty() && cmdStr.back()=='&') {
+        cerr << "cd: background execution not supported for built-in commands" << endl;
+        return;
+    }
+
+    // in case of cd there can be atmost 1 argument
+    vector<string> args;  // we will store the arguments of cd
+    extractArgs(ptr,args);
+
+    if(args.size()>1) {
+        cerr << "Invalid arguments" << endl;
         free(cmdCp);
         return;
     }
 
-    // 3) Resolve target path
-    std::string target;
+    // where to go 
+    string target;
     bool isDash = false;
 
-    if (args.empty()) {
-        // cd -> go to shell home (launch directory)
+    // checking what flags are present in the cd
+    if(args.empty()) {
+        // where it is only cd then you should go to shell's home directory 
         target = shellHome;
-    } else if (args[0] == "-") {
+    } 
+    else if(args[0]=="-") {
         isDash = true;
-        if (prevDir.empty()) {
-            std::cerr << "cd: previous directory not set" << std::endl;
-            free(cmdCp);
-            return;
-        }
-        target = prevDir;   // we'll print new CWD after switching
-    } else {
-        // normal path: supports ., .., ~, ~/subdir, relative/absolute
-        target = expandTilde(args[0], shellHome);
+        target = prevDir;
+    } 
+    else {
+        target = expandTilde(args[0]);
     }
 
-    // 4) Attempt chdir, updating prevDir only on success
+    // for - we would require the this directory which will become the prev working directory and hence we need to 
     char oldCwd[1024];
-    if (!getcwd(oldCwd, sizeof(oldCwd))) {
+    if(!getcwd(oldCwd,sizeof(oldCwd))) {
         perror("cd");
         free(cmdCp);
         return;
     }
 
-    if (chdir(target.c_str()) != 0) {
+    // chdir will handle the cases for . and ..
+    if(chdir(target.c_str())!=0) {
         perror("cd");
         free(cmdCp);
         return;
     }
+    
+    prevDir = oldCwd;
 
-    // success → prevDir becomes where we came from
-    prevDir.assign(oldCwd);
-
-    // cd - : print the absolute path we moved to
-    if (isDash) {
+    // cd - then we need to print the absolute path for the prev working directory and then print its path
+    if(isDash) {
         char newCwd[1024];
-        if (getcwd(newCwd, sizeof(newCwd))) {
-            std::cout << newCwd << std::endl;
+        if(getcwd(newCwd,sizeof(newCwd))) {
+            cout << newCwd << endl;
         }
     }
     free(cmdCp);

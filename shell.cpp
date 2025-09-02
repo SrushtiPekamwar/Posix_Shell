@@ -1,5 +1,3 @@
-// in cd ~ and ls ~ it should fallback to the actual home directory
-// for cd implement that if & is present the background process functionality not present for inbuilt cmds
 #include <iostream>
 #include <unistd.h>
 #include <sys/types.h>
