@@ -29,8 +29,9 @@ int main() {
     signal(SIGCHLD,sigchldHandler);
 
     // for autocompletion, when tab function is used
-    rl_attempted_completion_function = autocompletion;  
     loadSystemCommands();
+    rl_attempted_completion_function = autocompletion;
+    initAutocomplete();
 
     welcomeBanner();
     
@@ -57,7 +58,7 @@ int main() {
                 }
 
                 else if(strcmp(command,"clear")==0) {
-                    cout << "\033[2J\033[3J\033[H" << flush;   // this will clear the terminal
+                    cout << "\033[H\033[J" << flush;   // this will clear the terminal
                 }
 
                 else if(strcmp(command,"__CTRL_D__")==0) {

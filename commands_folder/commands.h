@@ -27,6 +27,7 @@ void parsing(char *command);
 void executePipeline(const char* command, string &shellHomeDirectory);
 char** autocompletion(const char* text, int start, int end);
 void loadSystemCommands();
+void initAutocomplete();
 
 #endif
  

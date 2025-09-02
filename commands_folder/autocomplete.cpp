@@ -62,6 +62,12 @@ static bool isCommand(const char* partialText, int start) {
     return true;
 }
 
+void initAutocomplete() {
+    rl_bind_key('\t', rl_complete);
+    rl_completion_append_character = '\0';
+    rl_variable_bind("show-all-if-ambiguous", "on");
+}
+
 char **autocompletion(const char* partialText, int start, int end) {
     (void)end;  // this will stop from showing the warning that the variable is unused
     if(isCommand(rl_line_buffer,start)) return rl_completion_matches(partialText,generator);
