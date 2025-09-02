@@ -1,56 +1,42 @@
 #include "commands.h"
 #include <iostream>
 #include <cstring>
-#include <fcntl.h>
 #include <unistd.h>
 using namespace std;
 
-void echoCommand(const char* command) {
-    char *cmdCopy = strdup(command);
-    char *ptr = cmdCopy;
-    ptr+=4;                 
-    ptr = skipSpacesAndTabs(ptr);   
-    if(*ptr=='&') {
-        cerr << "echo: background execution not supported for built-in commands" << endl;
-        free(cmdCopy);
-        return;
-    }
+void echoCommand(const char *command) {
+    // Skip the word "echo"
+    const char *ptr = command + 4; 
+    ptr = skipSpacesAndTabs((char*)ptr);
 
-    // if nothing is present after echo or only spaces are there then just print new line
-    if(*ptr=='\0') {                       
-        cout << endl;
-        free(cmdCopy);
-        return;
-    }
+    string output;
+    bool inQuotes = false;
+    bool lastWasSpace = false;
 
-    bool outputStarted = false;
-    bool pendingSpace = false;
-    bool quotes = false;
-
-    while(*ptr) {
-        if(*ptr=='"') {
-            if(pendingSpace && outputStarted && !quotes) { 
-                cout << ' '; 
-                pendingSpace = false; 
-            }
-            cout << '"';
-            quotes = !quotes;
-            outputStarted = true;
+    while (*ptr) {
+        if (*ptr == '"') {
+            // Toggle quotes but don't print them
+            output.push_back('"');
+            inQuotes = !inQuotes;
         } 
-        else if((*ptr==' ' || *ptr=='\t') && !quotes) {
-            pendingSpace = true; 
+        else if (isspace((unsigned char)*ptr)) {
+            if (inQuotes) {
+                // Preserve spaces inside quotes
+                output.push_back(*ptr);
+            } else {
+                // Outside quotes: collapse to a single space
+                if (!output.empty() && !lastWasSpace) {
+                    output.push_back(' ');
+                    lastWasSpace = true;
+                }
+            }
         } 
         else {
-            if(pendingSpace && outputStarted && !quotes) { 
-                cout << ' '; 
-                pendingSpace = false; 
-            }
-            cout << *ptr;   
-            outputStarted = true;
+            output.push_back(*ptr);
+            lastWasSpace = false;
         }
-        ++ptr;
+        ptr++;
     }
 
-    cout << endl;
-    free(cmdCopy);
+    cout << output << endl;
 }

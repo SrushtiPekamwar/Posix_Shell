@@ -34,26 +34,45 @@ static void stripQuotes(char* str) {
     }
 }
 
-static void parseStageRedirections(char *stage, vector<char*> &argv, bool &hasIn,  char inFile[512], bool &hasOut, bool &append, char outFile[512]) {
-    argv.clear();
-    hasIn = false; hasOut = false; append = false;
-    inFile[0] = '\0'; outFile[0] = '\0';
+static void parseStageRedirections(char *command, vector<char*> &tokens, bool &hasInputFile,  char inputFile[512], 
+                                   bool &hasOutputFile, char outputFile[512], bool &append) {
+    tokens.clear();
+    hasInputFile = false;
+    hasOutputFile = false;
+    append = false;
+    inputFile[0] = '\0';
+    outputFile[0] = '\0';
 
-    for (char *tok = strtok(stage, " \t"); tok; tok = strtok(nullptr, " \t")) {
-        if (strcmp(tok, "<") == 0) {
-            tok = strtok(nullptr, " \t");
-            if (tok) { hasIn = true; strncpy(inFile, tok, 511); inFile[511] = '\0'; }
-        } else if (strcmp(tok, ">>") == 0) {
-            tok = strtok(nullptr, " \t");
-            if (tok) { hasOut = true; append = true; strncpy(outFile, tok, 511); outFile[511] = '\0'; }
-        } else if (strcmp(tok, ">") == 0) {
-            tok = strtok(nullptr, " \t");
-            if (tok) { hasOut = true; append = false; strncpy(outFile, tok, 511); outFile[511] = '\0'; }
-        } else {
-            argv.push_back(tok);
+    char *saveptr5 = nullptr;
+    char *token = strtok_r(command," \t",&saveptr5);
+    while(token) {
+        if(strcmp(token,">")==0) {
+            token = strtok_r(nullptr," \t",&saveptr5);
+            if(token) {
+                hasOutputFile = true;
+                strcpy(outputFile,token);
+            }
         }
+        else if(strcmp(token,">>")==0) {
+            token = strtok_r(nullptr," \t",&saveptr5);
+            if(token) {
+                hasOutputFile = true;
+                append = true;
+                strcpy(outputFile,token);
+            }
+        }
+        else if(strcmp(token,"<")==0) {
+            token = strtok_r(nullptr," \t",&saveptr5);
+            if(token) {
+                hasInputFile = true;
+                strcpy(inputFile,token);
+            }
+        }
+        else {
+            tokens.push_back(token);
+        }
+        token = strtok_r(nullptr," \t",&saveptr5);
     }
-    argv.push_back(nullptr);
 }
 
 void executePipeline(const char* command, string &shellHomeDirectory) {
@@ -118,7 +137,7 @@ void executePipeline(const char* command, string &shellHomeDirectory) {
         bool append = false;
         char inputFile[512];
         char outputFile[512];
-        parseStageRedirections(singleStage,args,hasInputFile,inputFile,hasOutputFile,append,outputFile);
+        parseStageRedirections(singleStage,args,hasInputFile,inputFile,hasOutputFile,outputFile,append);
 
         for(int i=0;args[i];++i) stripQuotes(args[i]);
 
