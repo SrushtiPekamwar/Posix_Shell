@@ -28,6 +28,9 @@ void executePipeline(const char* command, string &shellHomeDirectory);
 char** autocompletion(const char* text, int start, int end);
 void loadSystemCommands();
 void initAutocomplete();
+extern pid_t fgPid; 
+void handleCtrlC(int signal);
+void handleCtrlZ(int signal);
 
 #endif
  

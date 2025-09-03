@@ -1,3 +1,5 @@
+// open -a Terminal -W
+// open -a Terminal -W
 #include <iostream>
 #include <cstring>
 #include "commands.h"
@@ -77,7 +79,7 @@ void pinfoCommand(const char* command) {
     cout << "Process Status -- " << status << endl;
     cout << "Memory -- " << virtualMemory << " {Virtual Memory in bytes}" << endl;
     cout << "Executable Path -- " << executablePath << endl;
-
+ 
     free(cmdCp);
 }
 

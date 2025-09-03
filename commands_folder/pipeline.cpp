@@ -103,7 +103,7 @@ void executePipeline(const char* command, string &shellHomeDirectory) {
     }
 
     int n = (int)stages.size();
-    // if there is only single stage then just execute it
+    // if there is no pipeline still this will run once, as we are running all the commands through this only hence this is necessary
     if(n==1) {
         // executeWithRedirection(stages[0],shellHomeDirectory,shellHomeDirectory);
         runExternalCommand(stages[0],shellHomeDirectory);
@@ -139,6 +139,7 @@ void executePipeline(const char* command, string &shellHomeDirectory) {
         char outputFile[512];
         parseStageRedirections(singleStage,args,hasInputFile,inputFile,hasOutputFile,outputFile,append);
 
+        // this is for commands like grep ".txt"
         for(int i=0;args[i];++i) stripQuotes(args[i]);
 
         pid_t pid = fork();

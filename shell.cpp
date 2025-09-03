@@ -18,8 +18,18 @@ int main() {
     bool running = true;   // if this var becomes false then only we will terminate from the terminal
     string prevDirectory = shellHomeDirectory;
 
+    // this is for the fg and bg processes
     signal(SIGTTOU,SIG_IGN);  // prevent "tty outsput suspended"
     signal(SIGTTIN,SIG_IGN);  // prevent background reads suspension
+
+    // to handle the signals 
+    // CTRL-C It should interrupt any currently running foreground job, by sending it the SIGINT signal. This
+    // should have no eﬀect on the shell if there is no foreground process running
+    signal(SIGINT,handleCtrlC);
+    // CTRL-Z It should push any currently running foreground job into the background, and change its state
+    // from running to stopped. This should have no eﬀect on the shell if there is no foreground process running
+    signal(SIGTSTP,handleCtrlZ);
+
 
     // loading the previous history file 
     stifle_history(20);   // only 20 commands are stored in the history file 
@@ -70,6 +80,7 @@ int main() {
                     if(strchr(command,'|')) {
                         executePipeline(command,shellHomeDirectory);
                     }
+                    // this will be executed even when there is no redirection
                     else {
                         string cmd = command;
                         executeWithRedirection(command,shellHomeDirectory,prevDirectory);

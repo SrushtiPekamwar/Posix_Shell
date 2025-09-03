@@ -100,13 +100,13 @@ void cdCommand(const char *command, string &shellHome, string &prevDir) {
         return;
     }
 
-    // chdir will handle the cases for . and ..
+    // chdir will handle the cases for . and .. and things like cd directory_name
     if(chdir(target.c_str())!=0) {
         perror("cd");
         free(cmdCp);
         return;
     }
-    
+
     prevDir = oldCwd;
 
     // cd - then we need to print the absolute path for the prev working directory and then print its path

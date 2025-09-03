@@ -82,6 +82,7 @@ void runExternalCommand(const char *command, string direct) {
         }
         // if it is not running in the foreground then the parent process should wait for the child process to complete its execution
         else {
+            cout << "[" << pid << "] running in foreground" << endl;
             tcsetpgrp(STDIN_FILENO,pid);  // give child the control of the shell
             int status;
             // wait for child to exit or stop
