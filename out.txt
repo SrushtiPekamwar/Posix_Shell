@@ -1,2 +1,0 @@
-[32moutput.txt[0m
-[32msorted_output.txt[0m

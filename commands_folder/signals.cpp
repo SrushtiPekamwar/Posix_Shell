@@ -7,6 +7,7 @@
 
 #include <signal.h>
 #include <iostream>
+#include "commands.h"
 using namespace std;
 
 pid_t fgPid = -1; // declare the global so that this can be handled from anywhere 
