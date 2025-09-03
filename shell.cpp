@@ -19,7 +19,7 @@ int main() {
     string prevDirectory = shellHomeDirectory;
 
     // this is for the fg and bg processes
-    signal(SIGTTOU,SIG_IGN);  // prevent "tty outsput suspended"
+    signal(SIGTTOU,SIG_IGN);  // prevent "tty output suspended"
     signal(SIGTTIN,SIG_IGN);  // prevent background reads suspension
 
     // to handle the signals 

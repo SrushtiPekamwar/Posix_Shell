@@ -1,5 +1,6 @@
 // CTRL-Z It should push any currently running foreground job into the background, and change its state
-// from running to stopped. This should have no eﬀect on the shell if there is no foreground process running.
+// from running to terminate (T) and this could be resumed later on. 
+// This should have no eﬀect on the shell if there is no foreground process running.
 
 // CTRL-C It should interrupt any currently running foreground job, by sending it the SIGINT signal. This
 // should have no eﬀect on the shell if there is no foreground process running.

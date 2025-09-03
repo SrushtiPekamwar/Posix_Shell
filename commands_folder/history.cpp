@@ -51,7 +51,7 @@ void historyCommand(const char *command) {
 
     int start = len-1-n;
     if(start<0) start = 0;
-    for(int i=start;i<=len-1;++i) {
+    for(int i=start+1;i<=len-1;++i) {
         if(entries[i] && entries[i]->line) {
             cout << entries[i]->line << endl;
         } 

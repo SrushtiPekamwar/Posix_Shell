@@ -73,6 +73,7 @@ static void parseStageRedirections(char *command, vector<char*> &tokens, bool &h
         }
         token = strtok_r(nullptr," \t",&saveptr5);
     }
+    tokens.push_back(nullptr);
 }
 
 void executePipeline(const char* command, string &shellHomeDirectory) {

@@ -1,3 +1,2 @@
-[32mcnt.txt[0m
-[32mlines.txt[0m
-[32mout.txt[0m
+[32moutput.txt[0m
+[32msorted_output.txt[0m

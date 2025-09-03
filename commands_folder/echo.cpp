@@ -6,7 +6,6 @@ using namespace std;
 
 void echoCommand(const char *command) {
     // Skip the word "echo"
-    cout << "in echo" << endl;
     const char *ptr = command + 4; 
     ptr = skipSpacesAndTabs((char*)ptr);
 
