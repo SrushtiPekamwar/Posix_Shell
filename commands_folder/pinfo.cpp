@@ -1,5 +1,5 @@
 // open -a Terminal -W
-// open -a Terminal -W
+// open -a Terminal -W &
 #include <iostream>
 #include <cstring>
 #include "commands.h"

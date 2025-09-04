@@ -84,5 +84,4 @@ void searchCommand(const char *command) {
         if(searchForFile(cwd,(char*)file.c_str())) cout << "true" << endl;
         else cout << "false" << endl;
     }
-
 }
