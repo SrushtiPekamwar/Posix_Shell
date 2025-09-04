@@ -10,6 +10,8 @@
 
 using namespace std;
 
+extern pid_t fgPid;
+
 void pinfoCommand(const char* command) {
     char *cmdCp = strdup(command);
     char *ptr = cmdCp;
@@ -66,9 +68,13 @@ void pinfoCommand(const char* command) {
     // processes are grouped in a process group
     // first we will get the group id of the our shell as it is working in the fg and then get the group id of the procedure and 
     // if both the group ids are same then we can conclude that the process is runnning in the foreground
-    pid_t groupidOfShell = tcgetpgrp(STDIN_FILENO);    // STDIN_FILENO(0) refers to your shell’s controlling terminal
-    pid_t groupidOfcommand = getpgid(pid); 
-    if(groupidOfShell==groupidOfcommand) status+="+";
+    // cout << "pid, fgpid : " << pid << " " << fgPid << endl;
+    // Fallback: check with terminal process group (for other processes)
+    pid_t groupidOfShell = tcgetpgrp(STDIN_FILENO);
+    pid_t groupidOfcommand = getpgid(pid);
+    if(groupidOfShell==groupidOfcommand) {
+        status+="+";
+    }
 
     char executablePath[PROC_PIDPATHINFO_MAXSIZE];
     if(proc_pidpath(pid,executablePath,sizeof(executablePath))<=0) {

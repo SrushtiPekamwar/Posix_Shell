@@ -82,7 +82,7 @@ void runExternalCommand(const char *command, string direct) {
         }
         // if it is not running in the foreground then the parent process should wait for the child process to complete its execution
         else {
-            cout << "[" << pid << "] running in foreground" << endl;
+            // cout << "[" << pid << "] running in foreground" << endl;
             fgPid = pid;
             tcsetpgrp(STDIN_FILENO,pid);  // give child the control of the shell
             int status;
@@ -90,7 +90,9 @@ void runExternalCommand(const char *command, string direct) {
             waitpid(pid,&status,WUNTRACED);
             // stdin_fileno is the fd of the standard input
             tcsetpgrp(STDIN_FILENO,getpgrp());   // this will give back the control to the shell
-            fgPid = -1;
+            if(WIFEXITED(status) || WIFSIGNALED(status)) {
+                fgPid = -1;   // reset only if process is done
+            }
         }
     }
     else {perror("fork");}
