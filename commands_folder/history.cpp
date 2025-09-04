@@ -37,8 +37,6 @@ void historyCommand(const char *command) {
     }
     if(*ptr) n = max(1,atoi(ptr));
 
-    if(n>10) cout << "Only last 10 commands' of history are printed" << endl;
-
     HISTORY_STATE *currState = history_get_history_state();
     int len = 0; // default value when no count is mentioned in the history eg history 5 is not there
     if(currState) len = currState->length;

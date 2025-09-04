@@ -19,8 +19,8 @@ int main() {
     string prevDirectory = shellHomeDirectory;
 
     // this is for the fg and bg processes
-    signal(SIGTTOU,SIG_IGN);  // prevent "tty output suspended"
-    signal(SIGTTIN,SIG_IGN);  // prevent background reads suspension
+    signal(SIGTTOU,SIG_IGN);  // this is sent when a bg process tries to write to the terminal and this signal will prevent it from doing so
+    signal(SIGTTIN,SIG_IGN);  // this is sent when a bg process tries to read from the termina and this signal will prevent it from doing so
 
     // to handle the signals 
     // CTRL-C It should interrupt any currently running foreground job, by sending it the SIGINT signal. This
@@ -32,7 +32,7 @@ int main() {
 
 
     // loading the previous history file 
-    stifle_history(20);   // only 20 commands are stored in the history file 
+    stifle_history(21);   // only 20 commands are stored in the history file 
     read_history(getHistoryFile().c_str());
     signal(SIGCHLD,sigchldHandler);
 

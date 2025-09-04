@@ -60,7 +60,7 @@ void pinfoCommand(const char* command) {
     if(processStatus==2) status="R";  // SRUN
     else if(processStatus==3) status="S";  // SSLEEP
     else if(processStatus==4) status="T";  // SSTOP
-    else if(processStatus==5) status="Z";  // SZOMB
+    else if(processStatus==5) status="Z";  // SZOMBa
 
     // We need to add "+" if the process is running in the foreground
     // processes are grouped in a process group
@@ -75,10 +75,10 @@ void pinfoCommand(const char* command) {
         strcpy(executablePath,"Unknown");
     }
 
-    cout << "pid -- " << pid << endl;
-    cout << "Process Status -- " << status << endl;
-    cout << "Memory -- " << virtualMemory << " {Virtual Memory in bytes}" << endl;
-    cout << "Executable Path -- " << executablePath << endl;
+    cout << "pid : " << pid << endl;
+    cout << "Process Status : " << status << endl;
+    cout << "Virutal Memory Usage (bytes) : " << virtualMemory << endl;
+    cout << "Executable Path : " << executablePath << endl;
  
     free(cmdCp);
 }
