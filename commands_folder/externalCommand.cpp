@@ -67,7 +67,9 @@ void runExternalCommand(const char *command, string direct) {
 
     // if the pid = 0 then we will run our command in this process 
     if(pid==0) {
+        // child
         setpgid(0,0);
+        // if not the bg process then we need to give the control of the terminal to the child process which is fg in this case
         if(!background) {tcsetpgrp(STDIN_FILENO,getpid());}
         execvp(args[0],args.data());
         perror("execvp");   // error while executing the execvp command
@@ -82,7 +84,7 @@ void runExternalCommand(const char *command, string direct) {
         }
         // if it is not running in the foreground then the parent process should wait for the child process to complete its execution
         else {
-            // cout << "[" << pid << "] running in foreground" << endl;
+            cout << "[" << pid << "] running in foreground" << endl;
             fgPid = pid;
             tcsetpgrp(STDIN_FILENO,pid);  // give child the control of the shell
             int status;
